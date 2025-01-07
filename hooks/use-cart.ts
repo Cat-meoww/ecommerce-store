@@ -1,3 +1,4 @@
+"use client"
 import { create } from "zustand";
 import { Product } from "@/types";
 import { persist, createJSONStorage } from 'zustand/middleware'
@@ -22,7 +23,7 @@ const useCart = create(persist<CartStore>((set, get) => ({
         const existingItem = currentItems.find(item => item.id === data.id);
 
         if (existingItem) {
-            return toast("Item already in cart.");
+            return toast("This item is already in your cart.");
         }
 
         set({ items: [...get().items, data] })
@@ -33,7 +34,7 @@ const useCart = create(persist<CartStore>((set, get) => ({
         const existingItem = currentItems.find(item => item.id === id);
 
         if (existingItem) {
-            if (quantity >= 0) {
+            if (quantity > 0) {
                 set({
                     items: currentItems.map((item) => ({
                         ...item,
@@ -41,12 +42,12 @@ const useCart = create(persist<CartStore>((set, get) => ({
                     }))
                 });
             } else {
-                get().removeItem(id)
+                set({ items: currentItems.filter(item => item.id !== id) })
             }
         }
     },
     removeItem: (id: string) => {
-        set({ items: [...get().items.filter(item => item.id !== id)] });
+        set({ items: get().items.filter(item => item.id !== id) });
     },
     removeAll: () => set({ items: [] }),
 }), {

@@ -23,6 +23,16 @@ function loadScript(src: string) {
     });
 }
 
+async function handlePayment<T>(payload: T) {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/payment`, payload);
+    if (response.data?.status ?? false) {
+        toast.success("Payment completed.");
+    } else {
+        toast.error("Payment Failed to verify.");
+    }
+
+}
+
 const Summary = () => {
 
 
@@ -31,11 +41,11 @@ const Summary = () => {
     const searchParams = useSearchParams();
     const items = useCart(state => state.items);
     const removeAll = useCart(state => state.removeAll);
-    const totalPrice = items.reduce((total, item) => total + Number(item.price), 0)
+    const totalPrice = items.reduce((total, item) => total + Number(item.price) * item.quantity, 0)
 
     useEffect(() => {
         if (searchParams.get('success')) {
-            toast.success("Payment completed.");
+
             removeAll();
         }
         if (searchParams.get("canceled")) {
@@ -54,9 +64,7 @@ const Summary = () => {
 
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/checkout`, {
-            productIds: items.map(item => item.id),
-        });
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/checkout`, items.map(item => ({ id: item.id, quantity: item.quantity })));
 
         if (response.data.payment ?? false) {
             const options = {
@@ -69,11 +77,24 @@ const Summary = () => {
                 callback_url: "/",
                 theme: {
                     color: "#3399cc"
-                }
+                },
+                handler: function (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) {
+                    // console.log(response);
+                    handlePayment(response)
+
+                    removeAll();
+                },
+
             }
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             const paymentObject = new window.Razorpay(options);
+
+            paymentObject.on('payment.failed', function (response: { error: { code: string; description: string; source: string; step: string; reason: string; metadata: { order_id: string; payment_id: string; }; }; }) {
+                console.log(response);
+                toast.error("Something went wrong.")
+
+            });
             paymentObject.open();
         }
 
@@ -83,6 +104,9 @@ const Summary = () => {
 
         console.log(response)
     }
+
+
+
 
     return (
         <div className='px-4 py-6 mt-16 rounded-lg bg-gray-50 sm:p-6 lg:col-span-5 lg:mt-0 lg:p-8'>

@@ -2,21 +2,31 @@
 import Currency from '@/components/ui/currency';
 import IconButton from '@/components/ui/icon-button';
 import useCart from '@/hooks/use-cart';
-import { X } from 'lucide-react';
+import { MinusIcon, PlusIcon, X } from 'lucide-react';
 import Image from 'next/image';
 // import { toast } from 'react-hot-toast';
 import { Product } from '@/types';
 
 interface CartItemProps {
-    data: Product;
+    data: Product & { quantity: number };
 }
 
 const CartItem: React.FC<CartItemProps> = ({ data }) => {
 
     const cart = useCart();
-
+    console.log(data)
     const onRemove = () => {
         cart.removeItem(data.id);
+    }
+
+    const onIncrease = () => {
+        cart.updateQuantity(data.id, data.quantity + 1);
+    }
+
+    const onDecrease = () => {
+        if (data.quantity > 1) {
+            cart.updateQuantity(data.id, data.quantity - 1);
+        }
     }
 
     return (
@@ -44,6 +54,12 @@ const CartItem: React.FC<CartItemProps> = ({ data }) => {
                         <p className='pl-4 ml-4 text-gray-500 border-l border-gray-200'>{data.size.name}</p>
                     </div>
                     <Currency value={data.price} />
+                    <div className='flex items-center mt-2'>
+                        
+                        <button onClick={onDecrease} className='flex px-2 py-1 text-white border-transparent bg-black disabled:cursor-not-allowed disabled:opacity-50 font-semibold hover:opacity-75 transition  rounded-full w-8 h-8'> <MinusIcon/> </button>
+                        <span className='px-4'>{data.quantity}</span>
+                        <button onClick={onIncrease} className='flex px-2 py-1 text-white border-transparent bg-black disabled:cursor-not-allowed disabled:opacity-50 font-semibold hover:opacity-75 transition  rounded-full w-8 h-8'> <PlusIcon/> </button>
+                    </div>
                 </div>
             </div>
         </li>
